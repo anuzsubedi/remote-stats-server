@@ -175,12 +175,31 @@ class SystemMonitor:
     @staticmethod
     def get_system_info() -> Dict[str, Any]:
         """Get general system information"""
+        # Get processor information
+        processor = platform.processor()
+        if not processor:
+            # Try to get processor info from /proc/device-tree/model (common on ARM systems)
+            try:
+                with open('/proc/device-tree/model', 'r') as f:
+                    processor = f.read().strip().replace('\x00', '')
+            except (FileNotFoundError, PermissionError):
+                # Fallback to architecture-based naming
+                arch = platform.machine()
+                if arch == 'aarch64':
+                    processor = 'ARM64 Processor'
+                elif arch == 'armv7l':
+                    processor = 'ARMv7 Processor'
+                elif arch == 'armv6l':
+                    processor = 'ARMv6 Processor'
+                else:
+                    processor = f'{arch} Processor'
+        
         return {
             'platform': platform.system(),
             'platform_release': platform.release(),
             'platform_version': platform.version(),
             'architecture': platform.machine(),
-            'processor': platform.processor(),
+            'processor': processor,
             'hostname': platform.node(),
             'python_version': platform.python_version(),
             'boot_time': psutil.boot_time(),
