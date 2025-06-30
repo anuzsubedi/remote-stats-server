@@ -852,7 +852,8 @@ Get all available GPU information including NVIDIA, AMD, integrated, and Raspber
     "gpu_memory": "128M",
     "type": "VideoCore IV",
     "temperature": "temp=45.0'C",
-    "frequency": "gpu_freq=500"
+    "frequency": "gpu_freq=500\narm_freq=2400 ...",
+    "gpu_freq": 500
   },
   "general": {
     "id": "display:0",
@@ -960,11 +961,14 @@ Get Raspberry Pi GPU information.
     "gpu_memory": "128M",
     "type": "VideoCore IV",
     "temperature": "temp=45.0'C",
-    "frequency": "gpu_freq=500"
+    "frequency": "gpu_freq=500\narm_freq=2400 ...",
+    "gpu_freq": 500
   },
   "timestamp": "2025-06-30T01:46:47.999739"
 }
 ```
+
+- `gpu_freq`: The current GPU frequency in MHz, extracted from the config string. If not available, this will be `null`.
 
 ### General GPU Information
 
@@ -1084,102 +1088,3 @@ while true; do
     sleep 5
 done
 ```
-
-### Process Monitoring
-
-```bash
-# Find processes using high CPU
-curl -s http://localhost:5000/api/processes/top?limit=5 | jq '.top_cpu[] | {name: .name, pid: .pid, cpu: .cpu_info.percent}'
-
-# Search for specific processes
-curl -s http://localhost:5000/api/processes/search?q=python | jq '.processes[] | {name: .name, pid: .pid, memory: .memory_info.percent}'
-
-# Get detailed info about a specific process
-curl -s http://localhost:5000/api/processes/1234 | jq '.'
-```
-
----
-
-## Data Units
-
-### Memory
-- All memory values are in bytes
-- Percentages are decimal values (e.g., 30.4 = 30.4%)
-
-### Storage
-- All storage values are in bytes
-- Percentages are decimal values
-
-### Network
-- Bytes sent/received are in bytes
-- Packet counts are integers
-
-### CPU
-- Usage percentages are decimal values
-- Frequency values are in Hz
-- Temperature is in degrees Celsius
-
-### Time
-- All timestamps are in ISO 8601 format
-- Boot time and process creation times are Unix timestamps
-
----
-
-## Rate Limiting
-
-Currently, no rate limiting is implemented. However, it's recommended to:
-
-- Not poll endpoints more frequently than every 1-5 seconds
-- Use appropriate caching mechanisms for your use case
-- Consider the server's resources when making frequent requests
-
----
-
-## Troubleshooting
-
-### Common Issues
-
-1. **Server not responding**
-   - Check if the server is running: `curl http://localhost:5000/api/health`
-   - Verify the port is not blocked by firewall
-
-2. **Permission errors for some endpoints**
-   - Some system information requires elevated privileges
-   - GPU information may not be available on all systems
-
-3. **Missing GPU information**
-   - NVIDIA GPU info requires `nvidia-smi` to be installed
-   - General GPU info requires `lshw` to be installed
-   - OpenGL info requires `glxinfo` to be installed
-
-### Debug Mode
-
-The server runs in debug mode by default. Check the console output for detailed error messages and request logs.
-
----
-
-## Version History
-
-- **v1.0.0** - Initial release with comprehensive system monitoring capabilities 
-
-## API Endpoints Overview
-
-| Category | Endpoint | Description |
-|----------|----------|-------------|
-| **Health** | `/api/health` | Server health status |
-| **System** | `/api/system/` | All system information |
-| **CPU** | `/api/system/cpu` | CPU details and usage |
-| **Memory** | `/api/system/memory` | Memory and swap info |
-| **Processes** | `/api/processes/` | All running processes |
-| **Storage** | `/api/storage/` | Disk and storage info |
-| **Network** | `/api/network/` | Network interfaces and stats |
-| **GPU** | `/api/gpu/` | All GPU information |
-| **GPU** | `/api/gpu/nvidia` | NVIDIA GPU information |
-| **GPU** | `/api/gpu/amd` | AMD GPU information |
-| **GPU** | `/api/gpu/integrated` | Integrated GPU information |
-| **GPU** | `/api/gpu/raspberry-pi` | Raspberry Pi GPU information |
-| **GPU** | `/api/gpu/general` | General GPU hardware info |
-| **GPU** | `/api/gpu/opengl` | OpenGL information |
-| **GPU** | `/api/gpu/messages` | GPU status and messages |
-
-*For complete endpoint details, see [API Documentation](API_DOCUMENTATION.md)* 

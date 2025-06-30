@@ -6,6 +6,7 @@ import json
 import time
 from datetime import datetime
 from typing import Dict, List, Any, Optional
+import re
 
 class SystemMonitor:
     @staticmethod
@@ -315,7 +316,29 @@ class SystemMonitor:
                     freq_result = subprocess.run(['vcgencmd', 'get_config', 'int', 'gpu_freq'], 
                                                capture_output=True, text=True, timeout=5)
                     if freq_result.returncode == 0:
-                        gpu_info['raspberry_pi']['frequency'] = freq_result.stdout.strip()
+                        freq_config = freq_result.stdout.strip()
+                        gpu_info['raspberry_pi']['frequency'] = freq_config
+                        # Extract gpu_freq value from the config string
+                        match = re.search(r'gpu_freq=([0-9]+)', freq_config)
+                        if match:
+                            gpu_info['raspberry_pi']['gpu_freq'] = int(match.group(1))
+                        else:
+                            # Fallback: try core_freq, v3d_freq, hevc_freq
+                            core_match = re.search(r'core_freq=([0-9]+)', freq_config)
+                            v3d_match = re.search(r'v3d_freq=([0-9]+)', freq_config)
+                            hevc_match = re.search(r'hevc_freq=([0-9]+)', freq_config)
+                            if core_match:
+                                gpu_info['raspberry_pi']['gpu_freq'] = int(core_match.group(1))
+                                gpu_info['raspberry_pi']['gpu_freq_source'] = 'core_freq'
+                            elif v3d_match:
+                                gpu_info['raspberry_pi']['gpu_freq'] = int(v3d_match.group(1))
+                                gpu_info['raspberry_pi']['gpu_freq_source'] = 'v3d_freq'
+                            elif hevc_match:
+                                gpu_info['raspberry_pi']['gpu_freq'] = int(hevc_match.group(1))
+                                gpu_info['raspberry_pi']['gpu_freq_source'] = 'hevc_freq'
+                            else:
+                                gpu_info['raspberry_pi']['gpu_freq'] = None
+                                gpu_info['raspberry_pi']['gpu_freq_source'] = None
                 except:
                     pass
             else:
@@ -350,6 +373,15 @@ class SystemMonitor:
                     })
         except:
             pass
+        
+        # Add frequency field for NVIDIA GPUs if possible
+        if 'nvidia' in gpu_info:
+            for gpu in gpu_info['nvidia']:
+                gpu['frequency'] = None  # nvidia-smi does not provide frequency in this call
+        # Add frequency field for AMD GPUs if possible
+        if 'amd' in gpu_info:
+            for gpu in gpu_info['amd']:
+                gpu['frequency'] = None  # rocm-smi parsing not implemented for frequency
         
         return gpu_info
     

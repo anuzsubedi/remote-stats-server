@@ -199,7 +199,10 @@ The API documentation includes:
   "raspberry_pi": {
     "available": true,
     "gpu_memory": "128M",
-    "type": "VideoCore IV"
+    "type": "VideoCore IV",
+    "temperature": "temp=45.0'C",
+    "frequency": "gpu_freq=500\narm_freq=2400 ...",
+    "gpu_freq": 500
   },
   "opengl": {
     "available": true,
@@ -210,6 +213,8 @@ The API documentation includes:
   "messages": []
 }
 ```
+
+- `gpu_freq`: The current GPU frequency in MHz, extracted from the config string. If not available, this will be `null`.
 
 ## Configuration
 
