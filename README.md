@@ -202,7 +202,17 @@ The API documentation includes:
     "type": "VideoCore IV",
     "temperature": "temp=45.0'C",
     "frequency": "gpu_freq=500\narm_freq=2400 ...",
-    "gpu_freq": 500
+    "gpu_freq": 500,
+    "reloc_memory": "128M",
+    "malloc_memory": "128M",
+    "total_memory": "256M",
+    "core_clock": 500,
+    "v3d_clock": 500,
+    "isp_clock": 500,
+    "hevc_clock": 500,
+    "h264_clock": 500,
+    "throttled": "0x0",
+    "voltage": "1.2V"
   },
   "opengl": {
     "available": true,
@@ -215,6 +225,12 @@ The API documentation includes:
 ```
 
 - `gpu_freq`: The current GPU frequency in MHz, extracted from the config string. If not available, this will be `null`.
+- `reloc_memory`, `malloc_memory`, `total_memory`: Additional Raspberry Pi GPU memory segments.
+- `core_clock`, `v3d_clock`, `isp_clock`, `hevc_clock`, `h264_clock`: All available GPU clocks in Hz.
+- `throttled`: Throttling status from vcgencmd.
+- `voltage`: Measured GPU voltage.
+
+See the [API Documentation](API_DOCUMENTATION.md) for a full list of fields and example responses for all GPU types.
 
 ## Configuration
 

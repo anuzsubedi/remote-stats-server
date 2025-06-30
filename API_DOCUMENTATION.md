@@ -813,7 +813,7 @@ Get active network connections.
 
 **GET** `/api/gpu/`
 
-Get all available GPU information including NVIDIA, AMD, integrated, and Raspberry Pi GPUs.
+Get all available GPU information, including NVIDIA, AMD, integrated, Raspberry Pi, OpenGL, and general display info.
 
 **Response:**
 ```json
@@ -825,53 +825,66 @@ Get all available GPU information including NVIDIA, AMD, integrated, and Raspber
       "memory_used": 2048,
       "memory_free": 8192,
       "temperature": 65,
-      "utilization": 45
+      "utilization": 45,
+      "frequency": null
     }
   ],
   "amd": [
     {
-      "id": "card0",
-      "name": "AMD Radeon RX 6800 XT",
+      "id": "0",
+      "name": "AMD Radeon RX 6800",
       "memory_total": 16384,
-      "memory_used": 1024,
-      "memory_free": 15360,
-      "temperature": 58,
-      "utilization": 32
+      "memory_used": 4096,
+      "memory_free": 12288,
+      "temperature": 55,
+      "utilization": 30,
+      "frequency": null
     }
   ],
   "integrated": [
     {
-      "name": "Intel Integrated GPU",
+      "name": "Intel UHD Graphics 630",
       "type": "Intel",
-      "usage_percent": "15",
-      "source": "sysfs"
+      "usage_percent": "25",
+      "vendor": "Intel Corporation"
     }
   ],
   "raspberry_pi": {
     "available": true,
     "gpu_memory": "128M",
+    "reloc_memory": "0M",
+    "malloc_memory": "1M",
+    "total_memory": "0M",
     "type": "VideoCore IV",
     "temperature": "temp=45.0'C",
     "frequency": "gpu_freq=500\narm_freq=2400 ...",
-    "gpu_freq": 500
+    "gpu_freq": 500,
+    "gpu_freq_source": "gpu_freq",
+    "core_clock": 910007424,
+    "v3d_clock": 960009536,
+    "isp_clock": 910010752,
+    "hevc_clock": 500004288,
+    "h264_clock": 0,
+    "throttled": "throttled=0xe0000",
+    "voltage": "volt=0.8541V"
   },
-  "general": {
-    "id": "display:0",
-    "class": "display",
-    "claimed": true,
-    "handle": "PCI:0000:01:00.0",
-    "description": "VGA compatible controller",
-    "product": "NVIDIA GeForce RTX 3080",
+  "opengl": {
+    "available": true,
     "vendor": "NVIDIA Corporation",
-    "physid": "0",
-    "businfo": "pci@0000:01:00.0",
-    "version": "a1",
-    "width": 64,
-    "clock": 1900000000
+    "renderer": "NVIDIA GeForce RTX 3080/PCIe/SSE2",
+    "version": "4.6.0 NVIDIA 470.82.01"
   },
-  "opengl": "OpenGL vendor string: NVIDIA Corporation\nOpenGL renderer string: NVIDIA GeForce RTX 3080/PCIe/SSE2\nOpenGL version string: 4.6.0 NVIDIA 470.82.01"
+  "general": {},
+  "messages": []
 }
 ```
+
+#### Field Descriptions
+- `nvidia`, `amd`, `integrated`: Arrays of detected GPUs of each type. Each object contains name, memory, temperature, utilization, and frequency (if available).
+- `raspberry_pi`: Detailed Raspberry Pi GPU info, including all available memory segments, all available clocks, temperature, throttling, and voltage.
+- `opengl`: OpenGL support and renderer info.
+- `general`: General display hardware info from lshw.
+- `messages`: Any GPU-related status or error messages.
 
 ### NVIDIA GPU Information
 

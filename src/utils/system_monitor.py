@@ -316,50 +316,81 @@ class SystemMonitor:
                                   capture_output=True, text=True, timeout=5)
             if result.returncode == 0:
                 gpu_memory = result.stdout.strip()
-                gpu_info['raspberry_pi'] = {
+                pi_gpu = {
                     'available': True,
                     'gpu_memory': gpu_memory,
                     'type': 'VideoCore IV'
                 }
-                
-                # Get additional Raspberry Pi GPU info
+                # Add all get_mem segments
+                for mem_type in ['reloc', 'malloc', 'total']:
+                    try:
+                        mem_result = subprocess.run(['vcgencmd', 'get_mem', mem_type], capture_output=True, text=True, timeout=2)
+                        if mem_result.returncode == 0:
+                            pi_gpu[f'{mem_type}_memory'] = mem_result.stdout.strip()
+                    except:
+                        pi_gpu[f'{mem_type}_memory'] = None
+                # Add all measure_clock outputs
+                for clk in ['core', 'v3d', 'isp', 'hevc', 'h264']:
+                    try:
+                        clk_result = subprocess.run(['vcgencmd', 'measure_clock', clk], capture_output=True, text=True, timeout=2)
+                        if clk_result.returncode == 0:
+                            val = clk_result.stdout.strip()
+                            match = re.search(r'frequency\(0\)=([0-9]+)', val)
+                            pi_gpu[f'{clk}_clock'] = int(match.group(1)) if match else val
+                    except:
+                        pi_gpu[f'{clk}_clock'] = None
+                # Add temperature
                 try:
                     temp_result = subprocess.run(['vcgencmd', 'measure_temp'], 
-                                               capture_output=True, text=True, timeout=5)
+                                               capture_output=True, text=True, timeout=2)
                     if temp_result.returncode == 0:
-                        gpu_info['raspberry_pi']['temperature'] = temp_result.stdout.strip()
+                        pi_gpu['temperature'] = temp_result.stdout.strip()
                 except:
-                    pass
-                    
+                    pi_gpu['temperature'] = None
+                # Add throttling info
+                try:
+                    throttled_result = subprocess.run(['vcgencmd', 'get_throttled'], capture_output=True, text=True, timeout=2)
+                    if throttled_result.returncode == 0:
+                        pi_gpu['throttled'] = throttled_result.stdout.strip()
+                except:
+                    pi_gpu['throttled'] = None
+                # Add voltage info
+                try:
+                    volts_result = subprocess.run(['vcgencmd', 'measure_volts'], capture_output=True, text=True, timeout=2)
+                    if volts_result.returncode == 0:
+                        pi_gpu['voltage'] = volts_result.stdout.strip()
+                except:
+                    pi_gpu['voltage'] = None
+                # Add frequency config
                 try:
                     freq_result = subprocess.run(['vcgencmd', 'get_config', 'int', 'gpu_freq'], 
-                                               capture_output=True, text=True, timeout=5)
+                                               capture_output=True, text=True, timeout=2)
                     if freq_result.returncode == 0:
                         freq_config = freq_result.stdout.strip()
-                        gpu_info['raspberry_pi']['frequency'] = freq_config
-                        # Extract gpu_freq value from the config string
+                        pi_gpu['frequency'] = freq_config
                         match = re.search(r'gpu_freq=([0-9]+)', freq_config)
                         if match:
-                            gpu_info['raspberry_pi']['gpu_freq'] = int(match.group(1))
+                            pi_gpu['gpu_freq'] = int(match.group(1))
                         else:
                             # Fallback: try core_freq, v3d_freq, hevc_freq
                             core_match = re.search(r'core_freq=([0-9]+)', freq_config)
                             v3d_match = re.search(r'v3d_freq=([0-9]+)', freq_config)
                             hevc_match = re.search(r'hevc_freq=([0-9]+)', freq_config)
                             if core_match:
-                                gpu_info['raspberry_pi']['gpu_freq'] = int(core_match.group(1))
-                                gpu_info['raspberry_pi']['gpu_freq_source'] = 'core_freq'
+                                pi_gpu['gpu_freq'] = int(core_match.group(1))
+                                pi_gpu['gpu_freq_source'] = 'core_freq'
                             elif v3d_match:
-                                gpu_info['raspberry_pi']['gpu_freq'] = int(v3d_match.group(1))
-                                gpu_info['raspberry_pi']['gpu_freq_source'] = 'v3d_freq'
+                                pi_gpu['gpu_freq'] = int(v3d_match.group(1))
+                                pi_gpu['gpu_freq_source'] = 'v3d_freq'
                             elif hevc_match:
-                                gpu_info['raspberry_pi']['gpu_freq'] = int(hevc_match.group(1))
-                                gpu_info['raspberry_pi']['gpu_freq_source'] = 'hevc_freq'
+                                pi_gpu['gpu_freq'] = int(hevc_match.group(1))
+                                pi_gpu['gpu_freq_source'] = 'hevc_freq'
                             else:
-                                gpu_info['raspberry_pi']['gpu_freq'] = None
-                                gpu_info['raspberry_pi']['gpu_freq_source'] = None
+                                pi_gpu['gpu_freq'] = None
+                                pi_gpu['gpu_freq_source'] = None
                 except:
-                    pass
+                    pi_gpu['frequency'] = None
+                gpu_info['raspberry_pi'] = pi_gpu
             else:
                 gpu_info['raspberry_pi'] = {'available': False}
         except (subprocess.TimeoutExpired, FileNotFoundError, subprocess.SubprocessError):
@@ -396,12 +427,26 @@ class SystemMonitor:
         # Add frequency field for NVIDIA GPUs if possible
         if 'nvidia' in gpu_info:
             for gpu in gpu_info['nvidia']:
+                # Try to get frequency via nvidia-smi (not available in default query)
                 gpu['frequency'] = None  # nvidia-smi does not provide frequency in this call
+                # Optionally, run nvidia-smi -q -d CLOCK for more details (not implemented for speed)
+
         # Add frequency field for AMD GPUs if possible
         if 'amd' in gpu_info:
             for gpu in gpu_info['amd']:
                 gpu['frequency'] = None  # rocm-smi parsing not implemented for frequency
-        
+
+        # For integrated GPUs, add vendor if available
+        if 'integrated' in gpu_info:
+            for gpu in gpu_info['integrated']:
+                if 'type' in gpu and gpu['type'] == 'Intel':
+                    gpu['vendor'] = 'Intel Corporation'
+                elif 'type' in gpu and gpu['type'] == 'AMD':
+                    gpu['vendor'] = 'Advanced Micro Devices, Inc.'
+                else:
+                    gpu['vendor'] = 'Unknown'
+
+        # Comments added for clarity and maintainability
         return gpu_info
     
     @staticmethod
