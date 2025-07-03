@@ -154,18 +154,42 @@ class SystemMonitor:
         """Get information about all running processes"""
         processes = []
         
-        for proc in psutil.process_iter(['pid', 'name', 'username', 'cpu_percent', 'memory_percent', 'status', 'create_time']):
+        # First pass: initialize CPU percentage calculations
+        for proc in psutil.process_iter(['pid', 'name', 'username', 'status', 'create_time']):
             try:
-                proc_info = proc.as_dict(attrs=['pid', 'name', 'username', 'cpu_percent', 'memory_percent', 'status', 'create_time'])
+                # Initialize CPU percentage calculation (first call returns 0, second call gives actual value)
+                proc.cpu_percent()
+            except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+                continue
+        
+        # Small delay to allow for CPU percentage calculation
+        import time
+        time.sleep(0.1)
+        
+        # Second pass: collect actual process information
+        for proc in psutil.process_iter(['pid', 'name', 'username', 'status', 'create_time']):
+            try:
+                proc_info = proc.as_dict(attrs=['pid', 'name', 'username', 'status', 'create_time'])
+                
+                # Get CPU percentage with proper initialization
+                cpu_percent = proc.cpu_percent()
+                
+                # Get memory information
+                memory_info = proc.memory_info()
+                memory_percent = proc.memory_percent()
+                
                 proc_info['memory_info'] = {
-                    'rss': proc.memory_info().rss,
-                    'vms': proc.memory_info().vms,
-                    'percent': proc.memory_percent()
+                    'rss': memory_info.rss,
+                    'vms': memory_info.vms,
+                    'percent': memory_percent
                 }
                 proc_info['cpu_info'] = {
-                    'percent': proc.cpu_percent(),
+                    'percent': cpu_percent,
                     'num_threads': proc.num_threads()
                 }
+                proc_info['cpu_percent'] = cpu_percent
+                proc_info['memory_percent'] = memory_percent
+                
                 processes.append(proc_info)
             except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
                 continue

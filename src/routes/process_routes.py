@@ -23,11 +23,17 @@ def get_top_processes():
         limit = request.args.get('limit', 10, type=int)
         processes = SystemMonitor.get_processes_info()
         
-        # Sort by CPU usage
-        top_cpu = sorted(processes, key=lambda x: x.get('cpu_info', {}).get('percent', 0), reverse=True)[:limit]
+        # Sort by CPU usage (use both cpu_percent and cpu_info.percent for compatibility)
+        top_cpu = sorted(processes, key=lambda x: max(
+            x.get('cpu_percent', 0), 
+            x.get('cpu_info', {}).get('percent', 0)
+        ), reverse=True)[:limit]
         
-        # Sort by memory usage
-        top_memory = sorted(processes, key=lambda x: x.get('memory_info', {}).get('percent', 0), reverse=True)[:limit]
+        # Sort by memory usage (use both memory_percent and memory_info.percent for compatibility)
+        top_memory = sorted(processes, key=lambda x: max(
+            x.get('memory_percent', 0), 
+            x.get('memory_info', {}).get('percent', 0)
+        ), reverse=True)[:limit]
         
         return jsonify({
             'top_cpu': top_cpu,
