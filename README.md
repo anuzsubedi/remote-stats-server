@@ -1,10 +1,24 @@
 # System Monitoring API Server
 
+
+
+> This API server is designed to be used with the frontend dashboard in [anuzsubedi/remote-stats](https://github.com/anuzsubedi/remote-stats).
+
+---
+
 A comprehensive Flask-based API server for real-time system resource monitoring. Monitor CPU, memory, storage, network, processes, and GPU information with a clean RESTful API.
 
 [![Python](https://img.shields.io/badge/Python-3.7+-blue.svg)](https://python.org)
 [![Flask](https://img.shields.io/badge/Flask-2.3.3-green.svg)](https://flask.palletsprojects.com/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+## System Compatibility & Testing
+
+This API server has been thoroughly tested on:
+- **Raspberry Pi 5** running Raspberry Pi OS: All features work as expected, including GPU and CPU temperature monitoring.
+- **VMware Fusion VM** on MacBook Pro 2017: Most features work, but GPU monitoring and CPU temperature monitoring are not available in virtualized environments.
+
+For best results, use on native Linux systems or Raspberry Pi hardware.
 
 ## Features
 
@@ -389,6 +403,22 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Flask** - For the excellent web framework
 - **Linux community** - For system monitoring tools and documentation
 
----
+## Environment Variables & .env Usage
 
-**Made with ❤️ for system monitoring enthusiasts** 
+This backend uses a `.env` file for configuration. You can set the following variables:
+
+```
+PORT=5000
+FLASK_DEBUG=True
+CORS_ALLOWED_ORIGINS=*
+```
+
+- `PORT`: The port the Flask server will run on (default: 5000)
+- `FLASK_DEBUG`: Set to `True` for debug mode, `False` for production
+- `CORS_ALLOWED_ORIGINS`: Comma-separated list of allowed origins for CORS (default: `*` for all origins)
+
+**How to use:**
+1. Copy the sample above into a file named `.env` in the backend root directory.
+2. The server will automatically load these settings on startup.
+
+---
