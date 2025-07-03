@@ -2,6 +2,10 @@ from flask import Flask, jsonify
 from flask_cors import CORS
 import os
 import sys
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Add the src directory to the Python path
 sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
@@ -14,7 +18,12 @@ from src.routes.gpu_routes import gpu_bp
 
 def create_app():
     app = Flask(__name__)
-    CORS(app)
+    # Get allowed origins from env, default to '*'
+    allowed_origins = os.getenv('CORS_ALLOWED_ORIGINS', '*')
+    if allowed_origins == '*' or allowed_origins.strip() == '':
+        CORS(app, supports_credentials=True)
+    else:
+        CORS(app, origins=[origin.strip() for origin in allowed_origins.split(',')], supports_credentials=True)
     
     # Register blueprints
     app.register_blueprint(system_bp, url_prefix='/api/system')
@@ -49,4 +58,6 @@ def create_app():
 
 if __name__ == '__main__':
     app = create_app()
-    app.run(host='0.0.0.0', port=5000, debug=True) 
+    port = int(os.getenv('PORT', 5000))
+    debug = os.getenv('FLASK_DEBUG', 'True').lower() in ['1', 'true', 'yes']
+    app.run(host='0.0.0.0', port=port, debug=debug) 
